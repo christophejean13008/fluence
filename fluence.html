@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluence – Test de lecture 1 min</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f0e8;--ink:#1a1410;--ink2:#4a3f35;--accent:#d4522a;--green:#2a7d4f;--blue:#2a4d7d;--paper:#fffdf8;--border:#d6cfc4;--warn:#e8a020;--r:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px 12px 60px}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;opacity:.4}
+.card{background:var(--paper);border:1px solid var(--border);border-radius:var(--r);padding:16px;width:100%;max-width:720px;box-shadow:0 2px 12px rgba(0,0,0,.06),0 0 0 1px rgba(255,255,255,.8) inset;margin-bottom:12px}
+header{text-align:center;margin-bottom:20px}
+header h1{font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,5vw,2.8rem);letter-spacing:-.02em;line-height:1}
+header h1 span{color:var(--accent);font-style:italic}
+header p{font-size:.8rem;color:var(--ink2);margin-top:4px;font-weight:300;letter-spacing:.05em;text-transform:uppercase}
+
+.info-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.info-row label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);white-space:nowrap}
+.info-row input{flex:1;min-width:100px;border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--bg);color:var(--ink);outline:none}
+.info-row input:focus{border-color:var(--accent)}
+.info-row select{border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--bg);color:var(--ink);outline:none;cursor:pointer}
+.info-row select:focus{border-color:var(--accent)}
+
+.text-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.text-tab{padding:6px 14px;border:1px solid var(--border);border-radius:999px;font-size:.78rem;font-weight:600;cursor:pointer;background:var(--bg);color:var(--ink2);transition:all .15s}
+.text-tab:hover{border-color:var(--accent);color:var(--accent)}
+.text-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.text-meta{font-size:.72rem;color:var(--ink2);margin-top:6px;font-style:italic}
+
+.text-display{font-size:1.05rem;line-height:2.1;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);max-height:300px;overflow-y:auto;user-select:none;font-family:'DM Sans',sans-serif}
+.text-display.dim{opacity:.35;filter:blur(1.5px);pointer-events:none}
+.word{display:inline;padding:1px 2px;border-radius:3px;transition:background .15s;cursor:pointer}
+.word:hover{background:rgba(212,82,42,.12)}
+.word.lue{background:rgba(42,125,79,.18)}
+.word.courante{background:#ffe066;color:#000;font-weight:600}
+.word.err-sub{background:rgba(212,82,42,.28);text-decoration:underline wavy var(--accent)}
+.word.err-om{background:rgba(232,160,32,.25);text-decoration:line-through}
+.tap-hint{font-size:.78rem;color:var(--accent);text-align:center;padding:8px 0 0;font-weight:600}
+
+.timer-zone{display:flex;align-items:center;justify-content:center;gap:20px;padding:8px 0;flex-wrap:wrap}
+.ring-wrap{position:relative;width:150px;height:150px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--border);stroke-width:8}
+.ring-prog{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;stroke-dasharray:408;stroke-dashoffset:408;transition:stroke-dashoffset 1s linear,stroke .4s}
+.ring-prog.warn{stroke:var(--warn)}
+.ring-prog.done{stroke:var(--green)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.ring-sec{font-family:'DM Mono',monospace;font-size:2.8rem;font-weight:500;line-height:1;transition:color .3s}
+.ring-sec.warn{color:var(--warn)}
+.ring-small{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2)}
+
+.rec-status{display:flex;align-items:center;gap:8px;justify-content:center;font-size:.85rem;color:var(--ink2);font-weight:600}
+.rec-dot{width:11px;height:11px;border-radius:50%;background:var(--accent);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+.stat-box{text-align:center;padding:10px 16px;border-radius:10px;background:var(--bg);border:1px solid var(--border);min-width:96px}
+.stat-box .val{font-family:'DM Mono',monospace;font-size:1.8rem;font-weight:500;line-height:1}
+.stat-box .lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin-top:3px}
+.stat-box.hl{border-color:var(--accent);background:#fff5f2}.stat-box.hl .val{color:var(--accent)}
+
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+button{font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;border:none;border-radius:999px;padding:11px 24px;cursor:pointer;transition:transform .1s,box-shadow .1s,opacity .15s;letter-spacing:.02em}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.38;cursor:default}
+.btn-start{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(212,82,42,.3)}
+.btn-start:hover:not(:disabled){box-shadow:0 4px 16px rgba(212,82,42,.45)}
+.btn-stop{background:var(--ink);color:#fff}
+.btn-sec{background:var(--bg);color:var(--ink);border:1px solid var(--border)}
+.btn-grn{background:var(--green);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+
+/* AUDIO PLAYER */
+.audio-panel{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px}
+.audio-panel .ap-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--ink2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.audio-panel audio{width:100%;height:38px}
+.ap-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.ap-actions button{padding:7px 14px;font-size:.76rem}
+
+.correction-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;padding-top:4px}
+.correction-row label{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2)}
+.correction-row input[type=number]{width:82px;border:2px solid var(--accent);border-radius:8px;padding:8px 10px;font-family:'DM Mono',monospace;font-size:1.1rem;text-align:center;color:var(--ink);background:var(--paper)}
+.correction-row input:focus{outline:none;box-shadow:0 0 0 3px rgba(212,82,42,.2)}
+.correction-note{font-size:.72rem;color:var(--ink2);font-style:italic}
+
+.section-title{font-family:'DM Serif Display',serif;font-size:1.05rem;margin-bottom:12px}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:12px}
+.res-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.res-box .rv{font-family:'DM Mono',monospace;font-size:1.7rem;font-weight:500;line-height:1}
+.res-box .rl{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin-top:3px}
+.res-box.good .rv{color:var(--green)}.res-box.alert .rv{color:var(--accent)}.res-box.blue .rv{color:var(--blue)}
+.norm-band{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:.78rem;color:var(--ink2);margin-bottom:10px}
+.norm-band strong{color:var(--ink)}
+
+.speed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.seg-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.seg-box .sv{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:500}
+.seg-box .sl{font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin-top:2px}
+.trend-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 13px;font-size:.8rem;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.trend-icon{font-size:1.1rem}
+
+.error-title{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2);margin-bottom:6px}
+.error-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
+.chip-bd{background:#fde4d9;color:#8b2a10}
+.chip-dg{background:#e8f0fd;color:#1a3a6b}
+.chip-om{background:#fdf4e0;color:#6b4a00}
+.chip-ok{background:#d4f5e4;color:#1a6b3c}
+.chip-nas{background:#f3e0fd;color:#5a1a6b}
+.chip-son{background:#fde0ec;color:#8b1a4a}
+.chip-voy{background:#e0f5fd;color:#1a5a6b}
+.sub-list{display:flex;flex-direction:column;gap:4px}
+.sub-item{font-size:.82rem;padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+.sub-exp{color:var(--green);font-weight:600}
+.sub-said{color:var(--accent);font-weight:600}
+
+.history-header{font-family:'DM Serif Display',serif;font-size:1.1rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.history-header button{font-size:.68rem;padding:4px 10px;background:transparent;border:1px solid var(--border);color:var(--ink2);border-radius:999px}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+th{text-transform:uppercase;letter-spacing:.05em;font-size:.65rem;font-weight:600;color:var(--ink2);padding:5px 6px;border-bottom:1px solid var(--border);text-align:left}
+td{padding:7px 6px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.acc{display:inline-block;padding:2px 7px;border-radius:999px;font-size:.72rem;font-weight:600;font-family:'DM Mono',monospace}
+.acc-up{background:#d4f5e4;color:#1a6b3c}.acc-dn{background:#fde4d9;color:#8b2a10}.acc-eq{background:#e8e4df;color:#4a3f35}
+.no-hist{text-align:center;color:var(--ink2);font-size:.8rem;padding:16px;font-style:italic}
+.chart-area{margin-top:12px;height:70px}
+.chart-area canvas{width:100%!important;height:100%!important}
+
+details summary{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--ink2);cursor:pointer;padding:5px 0;user-select:none}
+details summary:hover{color:var(--ink)}
+.norms-tbl{margin-top:8px;font-size:.76rem}
+.norms-tbl th{font-size:.63rem}
+.norms-tbl td{padding:5px 6px}
+
+#cd-overlay{position:fixed;inset:0;background:rgba(26,20,16,.88);display:none;align-items:center;justify-content:center;z-index:999}
+#cd-overlay.show{display:flex}
+.cd-num{font-family:'DM Serif Display',serif;font-size:9rem;color:#fff;animation:pop .8s ease-out}
+@keyframes pop{from{transform:scale(1.5);opacity:0}to{transform:scale(1);opacity:1}}
+
+.hidden{display:none!important}
+.info-banner{font-size:.75rem;color:var(--ink2);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;line-height:1.5}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;padding:3px 9px;border-radius:999px;font-weight:600}
+.badge-ok{background:#d4f5e4;color:#1a6b3c}.badge-no{background:#fde4d9;color:#8b2a10}
+
+@media(max-width:480px){.card{padding:12px}.ring-wrap{width:130px;height:130px}.ring-sec{font-size:2.3rem}}
+</style>
+</head>
+<body>
+<div id="cd-overlay"><div class="cd-num" id="cd-num">3</div></div>
+
+<header>
+  <h1>Test de <span>Fluence</span></h1>
+  <p>Enregistrement · 1 minute · analyse différée</p>
+</header>
+
+<!-- === INFOS ÉLÈVE === -->
+<div class="card" id="card-info">
+  <div class="info-row">
+    <label>Élève</label>
+    <input type="text" id="inp-name" placeholder="Prénom Nom"/>
+    <label>Niveau</label>
+    <select id="sel-level" onchange="onLevelChange()">
+      <option value="CP">CP</option><option value="CE1" selected>CE1</option>
+      <option value="CE2">CE2</option><option value="CM1">CM1</option><option value="CM2">CM2</option>
+    </select>
+  </div>
+  <div class="text-tabs" id="text-tabs"></div>
+  <div class="text-meta" id="text-meta"></div>
+</div>
+
+<!-- === TEXTE (visible en phase relecture) === -->
+<div class="card" id="card-text">
+  <div class="section-title" id="text-section-title" style="display:none">📄 Texte de l'élève</div>
+  <div class="text-display" id="text-display"><em style="color:#bbb">Sélectionner un niveau et un texte…</em></div>
+  <div class="tap-hint hidden" id="tap-hint">👆 Appuyez sur le DERNIER mot lu par l'élève</div>
+</div>
+
+<!-- === CHRONO + ENREGISTREMENT === -->
+<div class="card" id="card-timer">
+  <div class="timer-zone">
+    <div class="ring-wrap">
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle class="ring-bg" cx="75" cy="75" r="65"/>
+        <circle class="ring-prog" id="ring" cx="75" cy="75" r="65"/>
+      </svg>
+      <div class="ring-center">
+        <span class="ring-sec" id="ring-sec">60</span>
+        <span class="ring-small" id="ring-lbl">secondes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rec-status hidden" id="rec-status" style="margin-top:6px">
+    <span class="rec-dot"></span><span>Enregistrement en cours…</span>
+  </div>
+
+  <div class="controls" id="ctrl-idle">
+    <button class="btn-start" id="btn-start" onclick="startCountdown()">▶ Démarrer l'enregistrement</button>
+  </div>
+  <div class="controls hidden" id="ctrl-recording">
+    <button class="btn-stop" onclick="stopTest()">■ Arrêter</button>
+  </div>
+  <div class="info-banner" id="mic-info" style="margin-top:10px">
+    <span id="sr-badge"></span>
+    <span id="rec-badge"></span>
+  </div>
+</div>
+
+<!-- === RÉSULTAT (après enregistrement) === -->
+<div class="card hidden" id="card-review">
+  <div class="section-title">🎧 Enregistrement terminé</div>
+
+  <!-- Audio player -->
+  <div class="audio-panel" id="audio-panel">
+    <div class="ap-title">🔊 Réécouter la lecture</div>
+    <audio id="audio-el" controls preload="metadata"></audio>
+    <div class="ap-actions">
+      <button class="btn-sec" onclick="downloadAudio()">⬇ Télécharger l'audio</button>
+    </div>
+  </div>
+
+  <!-- Comptage mots -->
+  <div class="timer-zone" style="gap:14px">
+    <div class="stat-box hl"><div class="val" id="rev-words">0</div><div class="lbl">Mots lus</div></div>
+    <div class="stat-box"><div class="val" id="rev-wpm">—</div><div class="lbl">Mots/min</div></div>
+  </div>
+  <div class="correction-row" style="margin-top:12px">
+    <label>Mots corrects</label>
+    <input type="number" id="inp-correction" min="0" value="0" oninput="onCorrectionInput()"/>
+    <span class="correction-note">(appuyez sur le dernier mot lu dans le texte, ou ajustez ici)</span>
+  </div>
+  <div id="rev-norm" style="margin-top:12px"></div>
+
+  <div class="controls">
+    <button class="btn-blue" onclick="runAnalysis()" id="btn-analyze">🔍 Analyser la lecture</button>
+    <button class="btn-grn" onclick="saveSession()" id="btn-save">💾 Enregistrer la session</button>
+    <button class="btn-sec" onclick="resetAll()">↺ Nouveau test</button>
+  </div>
+</div>
+
+<!-- === ANALYSE (à la demande) === -->
+<div class="card hidden" id="card-analysis">
+  <div class="section-title">📈 Analyse de la lecture</div>
+  <div class="error-title">Profil de vitesse (par tiers de la lecture)</div>
+  <div class="speed-grid" id="speed-grid"></div>
+  <div id="trend-zone"></div>
+  <div id="error-section" style="margin-top:12px"></div>
+</div>
+
+<!-- === HISTORIQUE === -->
+<div class="card" id="hist-card">
+  <div class="history-header"><span>📋 Historique</span><button onclick="clearHist()">Effacer</button></div>
+  <div id="hist-body"><div class="no-hist">Aucune session enregistrée</div></div>
+  <div class="chart-area hidden" id="chart-zone"><canvas id="prog-chart"></canvas></div>
+</div>
+
+<!-- === NORMES === -->
+<div class="card">
+  <details>
+    <summary>📖 Normes de fluence (mots corrects / minute)</summary>
+    <table class="norms-tbl">
+      <thead><tr><th>Niveau</th><th>Faible</th><th>Fragile</th><th>Attendu</th><th>Avancé</th></tr></thead>
+      <tbody>
+        <tr><td>CP (fin)</td><td>&lt;20</td><td>20–40</td><td>40–70</td><td>&gt;70</td></tr>
+        <tr><td>CE1 (fin)</td><td>&lt;50</td><td>50–70</td><td>70–100</td><td>&gt;100</td></tr>
+        <tr><td>CE2 (fin)</td><td>&lt;70</td><td>70–90</td><td>90–120</td><td>&gt;120</td></tr>
+        <tr><td>CM1 (fin)</td><td>&lt;90</td><td>90–110</td><td>110–140</td><td>&gt;140</td></tr>
+        <tr><td>CM2 (fin)</td><td>&lt;100</td><td>100–120</td><td>120–150</td><td>&gt;150</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:.7rem;color:var(--ink2);margin-top:6px;font-style:italic">Sources : Sprenger-Charolles, Écalle & Magnan</p>
+  </details>
+</div>
+
+<script>
+// ═══════════════════════════════════════════ TEXTES
+const TEXTES={
+  CP:[
+    {id:'CP-A',titre:'Le renard',auteur:'',total:29,texte:`Le renard court dans la forêt. Il arrive à la ferme.
+Va-t-il voler une poule ? Lola l'a vu. Elle crie et
+le chasse.
+« Bravo Lola », dit la poule.`},
+    {id:'CP-B',titre:'Les cartables',auteur:'',total:57,texte:`Les cartables
+Nous sommes lundi 3 septembre, le premier jour de l'école.
+Dans la classe d'Arthur il y a beaucoup d'enfants, avec des
+cartables jaunes, noirs, bleus et verts. A côté de qui
+s'asseoir ? Il remarque une petite fille brune avec un cartable
+rouge, comme lui ! Alors il vient s'asseoir juste à côté d'elle.
+Elle s'appelle Nadia.`},
+  ],
+  CE1:[
+    {id:'CE1-A',titre:'Le miel',auteur:'',total:110,texte:`Le miel
+Le miel est une pâte savoureuse, sucrée et collante, faite par les
+abeilles.
+Pour le fabriquer, les abeilles vont sur les fleurs, au printemps et en
+été, et pompent le liquide qui se trouve à l'intérieur : le nectar. On
+dit qu'elles butinent les fleurs. Elles déposent ensuite ce nectar dans
+leur maison, la ruche, où elles le transforment en miel.
+Le miel peut avoir beaucoup de saveurs différentes, en fonction des
+fleurs ou des arbres que les abeilles ont butinés.
+La personne qui élève les abeilles et qui vend leur miel s'appelle
+l'apiculteur. Il porte une combinaison spéciale pour se protéger des
+piqûres lorsqu'il travaille près des ruches.`},
+    {id:'CE1-B',titre:'Dino',auteur:'',total:103,texte:`Dino, où es-tu ? crie papa.
+Ici, dans la mare.
+Depuis une heure, Dino, le petit dinosaure, se débat pour se dégager
+de la boue profonde. Il pleut, de grands oiseaux noirs volent dans le
+ciel sombre. Ils se préparent à attaquer Dino. Dino pose sa grande
+patte droite sur le bord de la mare et il essaie de sortir son corps de
+la boue.
+Son père arrive entre les arbres de la forêt qui borde la mare.
+Il attrape le cou de Dino entre ses dents et d'un coup, il soulève
+Dino.
+Il le pose sur la terre ferme.
+Sauvé ! crie Dino.`},
+  ],
+  CE2:[
+    {id:'CE2-A',titre:'Les souris',auteur:'F. Vital-Durand',total:141,texte:`Dans une petite ville, un marchand de fruits possédait un magasin
+situé juste au-dessus d'une cave profonde. Chaque nuit, les souris
+venaient en foule de cette cave dans le magasin. Elles mangeaient
+les pommes et les poires, les raisins et les noix, et n'épargnaient pas
+non plus les légumes et les pommes de terre. Entre minuit et le lever
+de soleil, aucune marchandise se trouvant dans le magasin n'était
+épargnée des petits rongeurs. La nuit, tant qu'il y avait du bruit dans
+les rues et des chariots qui roulaient, les souris restaient silencieuses
+dans la cave. Mais dès minuit, elles venaient en foule, s'amusaient
+avec les fruits doux et célébraient de vrais banquets. Leurs traces de
+passage désespéraient le magasin. Il essayait en vain de se protéger
+contre les souris en fermant les portes et en installant des pièges,
+mais les petites bêtes revenaient toujours.`},
+    {id:'CE2-B',titre:'Les maisons',auteur:'',total:137,texte:`Il y a des maisons qui ont toujours l'air de vouloir s'envoler.
+On les a posées là, un peu de travers, au coin de la route, avec
+leurs fenêtres et leurs portes, et leur petite cheminée qui souffle
+de toutes ses forces une fumée de toutes les couleurs, grise,
+bleue, blanche.
+On les a posées là, mais un coup de vent pourrait les emporter,
+un coup de vent pourrait venir, un coquin de vent qui sifflote, les
+mains dans ses poches et – houp ! – il n'y aurait plus de maison
+au coin de la route. Il y aurait seulement, par-dessus les nuages,
+une petite maison voltigeante, avec ses portes et ses fenêtres
+ouvertes sur le soleil, la lune et les étoiles, une petite maison
+légère qui se promènerait, et la fumée de ses cheminées se
+mélangerait aux nuages.`},
+  ],
+  CM1:[
+    {id:'CM1-A',titre:"Les chats à l'école",auteur:'Sophie Greuil',total:215,texte:`Une directrice a eu l'idée d'accueillir 9 chats dans son école à Lille. Son
+but ? Apporter du calme, rassurer et relaxer ses 75 élèves. Aujourd'hui,
+cette « ronronthérapie » met tout le monde de bon poil ! Et un grand
+calme surprenant règne dans cette école pas comme les autres.
+En classe, 9 chats partagent le quotidien des élèves. Discrètement mais
+sûrement, Duchesse, Donald, Simba, Paillette ou Nala se baladent en
+toute liberté entre sacs à dos, chaises et dictionnaires : « Nos chats vont
+et viennent à leur guise, précise la directrice Michèle Bourton, 60 ans.
+Personne ne les force : ils sont chez eux !
+Ainsi, ils profitent d'une porte entrebâillée pour entrer ou sortir d'un
+cours ou de l'école. Ils ne dérangent absolument pas. »
+Les chats attendent parfois les élèves, assis derrière la porte de l'école.
+Alors, Marc-Ange, 6 ans, aime venir « leur faire des câlins, des caresses
+ou des bisous sur le ventre ». Ravi, Louca, 12 ans, l'est aussi : « Quand
+on caresse un chat, on le fait ronronner immédiatement et tout son corps
+vibre : poser ma main dessus m'aide à me concentrer. Mon préféré est
+Crousty, très câlin ». Certains élèves, autrefois timides ou stressés, se
+sentent aujourd'hui plus heureux et plus confiants grâce à la présence
+des animaux. Ils sont maintenant pressés de revenir à l'école le
+lendemain.`},
+    {id:'CM1-B',titre:"L'arbre majestueux",auteur:'',total:214,texte:`C'était un arbre majestueux. Il étalait ses branches au milieu de la
+jungle.
+Au sommet, tout en haut, un oiseau avait fait son nid et bientôt des
+oisillons étaient nés.
+Un éléphant vint à passer. Il aimait bien se gratter le dos : il
+s'approcha de l'arbre et se mit à se frotter vigoureusement contre le
+tronc. L'arbre entier remua et craqua. Dans leur nid, les oisillons,
+terriblement secoués, furent pris de peur : ils se blottirent près de
+leur maman.
+« Ohé ! Grand maitre de la jungle, il y a assez d'arbres autour de
+vous ! Ne secouez pas celui-ci. Mes petits enfants ont peur. Ils
+peuvent tomber du nid et se briser les os. »
+L'éléphant ne daigna pas répondre. Il fixa l'oiseau de son œil
+minuscule, battit l'air de ses oreilles géantes et s'en alla.
+Le lendemain, il revint et se gratta de plus belle au tronc de l'arbre.
+Les petits oiseaux effrayés se blottirent à nouveau contre l'aile
+maternelle. La mère était très en colère.
+« Je vous défends de secouer cet arbre, cria-t-elle, ou je vous
+punirai !
+- Toi, misérable créature de rien du tout ! tonna l'éléphant. Que
+pourrais-tu contre un colosse de ma taille ? Si je voulais, je jetterais
+cet arbre à bas et ton nid en même temps ! »
+La mère oiseau ne répondit rien.`},
+  ],
+  CM2:[
+    {id:'CM2-A',titre:"Pêche à l'aimant",auteur:'Nathalie Michel',total:233,texte:`Depuis 2 ans, Raphaël et son père pratiquent la pêche à l'aimant dans
+la Seine et dans le canal de l'Ourcq, près de Paris. Ils ont remonté
+plusieurs tonnes de déchets métalliques et dénoncent la pollution des
+cours d'eau. 300 vélos, 200 trottinettes, 70 Caddies, 15 scooters, 2
+motos… Au total, 15 tonnes de déchets métalliques !
+Pour pratiquer cette pêche, Raphaël est équipé d'un aimant super
+puissant accroché au bout d'une corde d'environ 20 mètres, et d'un
+grappin, une sorte de crochet, lui aussi fixé au bout d'une corde.
+Raphaël lance l'aimant dans l'eau, et celui-ci attire les déchets
+métalliques qui sont à proximité. Sa plus grosse prise ? Une machine
+à laver.
+Elle était tellement lourde qu'il lui a fallu 4 heures, avec son père, pour
+la sortir de l'eau. Ils ont aussi retrouvé des panneaux de signalisation,
+des outils rouillés et même des vélos encore attachés avec un cadenas.
+Pour faire comprendre aux gens qu'il faut arrêter de polluer, Raphaël
+a monté, avec l'aide de la mairie de Paris, un petit musée.
+Il y expose les objets les plus insolites qu'il a trouvés : appareils photo,
+trottinettes électriques, bijoux, coffres-forts… Des élèves viennent
+parfois visiter cette exposition pour découvrir les dangers de la
+pollution.
+Pour Raphaël, c'est l'occasion de « montrer aux passants tout ce qui
+se trouve au fond de l'eau, alors que nous ne devrions pêcher que des
+poissons ! ».`},
+    {id:'CM2-B',titre:'La petite sirène',auteur:'',total:204,texte:`Ce château était construit de pierres jaunes et luisantes ; de grands
+escaliers de marbre conduisaient à l'intérieur et au jardin ; plusieurs
+dômes dorés brillaient sur le toit, et entre les colonnes des galeries se
+trouvaient des statues de marbre qui paraissaient vivantes. Les salles,
+magnifiques, étaient ornées de rideaux et de tapis incomparables, et
+les murs couverts de grandes peintures. Dans le grand salon, le soleil
+réchauffait, à travers un plafond de cristal, les plantes les plus rares,
+qui poussaient dans un grand bassin au-dessous de plusieurs jets
+d'eau. Dès lors, la petite sirène revint souvent à cet endroit, la nuit
+comme le jour ; elle s'approchait de la côte, et osait même s'asseoir
+sous le grand balcon de marbre qui projetait son ombre bien avant
+sur les eaux. De là, elle voyait au clair de la lune le jeune prince, qui
+se croyait seul ; souvent, au son de la musique, il passait devant elle
+dans un riche bateau pavoisé, et ceux qui apercevaient son voile blanc
+dans les roseaux verts la prenaient pour un cygne ouvrant ses ailes.
+Elle entendait aussi les pêcheurs dire beaucoup de bien du jeune
+prince, et alors elle se réjouissait de lui avoir sauvé la vie, quoiqu'il
+l'ignorât complètement.`},
+  ],
+};
+
+// ═══════════════════════════════════════════ NORMES + GRAPHÈMES
+const NORMS={CP:{low:20,fmax:40,emax:70},CE1:{low:50,fmax:70,emax:100},CE2:{low:70,fmax:90,emax:120},CM1:{low:90,fmax:110,emax:140},CM2:{low:100,fmax:120,emax:150}};
+const GRAPHEMES=['ouille','aille','euille','tion','eau','oeu','ill','ain','ein','oin','aim','eim','an','en','am','em','in','im','un','um','on','om','ou','oi','au','eu','ai','ei','ph','ch','gn','qu','gu','th','ss','ll','mm','nn','tt','pp','rr','cc','ff','er','ez'];
+const CONFUSIONS=[
+  {pair:['b','d'],type:'Inversion b/d'},{pair:['p','q'],type:'Inversion p/q'},
+  {pair:['b','p'],type:'Sonorité b/p'},{pair:['d','t'],type:'Sonorité d/t'},
+  {pair:['g','k'],type:'Sonorité g/k'},{pair:['g','c'],type:'Sonorité g/c'},
+  {pair:['v','f'],type:'Sonorité v/f'},{pair:['s','z'],type:'Sonorité s/z'},
+  {pair:['j','ch'],type:'Sonorité j/ch'},{pair:['m','n'],type:'Confusion m/n'},
+  {pair:['u','n'],type:'Inversion u/n'},{pair:['an','on'],type:'Nasale an/on'},
+  {pair:['an','en'],type:'Nasale an/en'},{pair:['in','un'],type:'Nasale in/un'},
+  {pair:['on','om'],type:'Nasale on/om'},{pair:['oi','ou'],type:'Voyelle oi/ou'},
+  {pair:['eu','ou'],type:'Voyelle eu/ou'},{pair:['ai','ei'],type:'Voyelle ai/ei'},
+  {pair:['ch','c'],type:'Graphème ch/c'},{pair:['g','gn'],type:'Graphème g/gn'},
+];
+
+// ═══════════════════════════════════════════ STATE
+let currentLevel='CE1',currentTextIdx=0,currentTexte=null;
+let refWords=[],finalCount=0,tapWordCount=null;
+let timerInt=null,secsLeft=60,secsElapsed=0,isRunning=false;
+let asrTimeline=[]; // asrTimeline[sec]=nb mots ASR cumulés
+let lastAnalysis=null;
+let history=JSON.parse(localStorage.getItem('fluence_hist2')||'[]');
+// SR
+let recognition=null,srSupported=false,srRestarting=false,srProcessedFinals=0,audioCtx=null;
+let transcript='',interimTranscript='';
+// Audio recording
+let mediaRecorder=null,audioChunks=[],audioBlob=null,audioURL=null,micStream=null,recSupported=false;
+
+// ═══════════════════════════════════════════ UTILS
+function norm(w){return w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
+function tokenize(text){const re=/[\wÀ-ÖØ-öø-ÿ]+(?:[-'][\wÀ-ÖØ-öø-ÿ]+)*/gu;const arr=[];let m;while((m=re.exec(text))!==null){arr.push({orig:m[0],nrm:norm(m[0]),start:m.index,end:m.index+m[0].length,idx:arr.length});}return arr;}
+function levenshtein(a,b){const m=a.length,n=b.length;const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);return dp[m][n];}
+function simScore(a,b){if(!a||!b)return 0;if(a===b)return 1;const d=levenshtein(a,b),L=Math.max(a.length,b.length);return 1-d/L;}
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function removeOverlap(existing,newText){const nw=newText.trim().split(/\s+/).filter(Boolean);if(!nw.length)return'';const tail=existing.toLowerCase().slice(-500);if(nw.length>=3){const full=nw.map(w=>w.toLowerCase()).join(' ');if(tail.includes(full))return'';}for(let n=Math.min(20,nw.length-1);n>=3;n--){const prefix=nw.slice(0,n).map(w=>w.toLowerCase()).join(' ');if(tail.includes(prefix)){const rest=nw.slice(n).join(' ');return rest?rest+' ':'';}}if(nw.length>=2){const p2=nw.slice(0,2).map(w=>w.toLowerCase()).join(' ');if(existing.toLowerCase().trimEnd().endsWith(p2)){const rest=nw.slice(2).join(' ');return rest?rest+' ':'';}}return newText.trim()+' ';}
+function toGraphemes(word){const w=word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');const out=[];let i=0;while(i<w.length){let matched=null;for(const g of GRAPHEMES){if(w.startsWith(g,i)){matched=g;break;}}if(matched){out.push(matched);i+=matched.length;}else{out.push(w[i]);i++;}}return out;}
+function findConfusion(a,b){for(const c of CONFUSIONS){if((c.pair[0]===a&&c.pair[1]===b)||(c.pair[1]===a&&c.pair[0]===b))return c;}return null;}
+function classifySubstitution(expected,said){const ge=toGraphemes(expected),gs=toGraphemes(said);const result={confusions:[]};const m=ge.length,n=gs.length;const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)dp[i][j]=ge[i-1]===gs[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);let i=m,j=n;while(i>0||j>0){if(i>0&&j>0&&ge[i-1]===gs[j-1]){i--;j--;}else if(i>0&&j>0&&dp[i][j]===dp[i-1][j-1]+1){const conf=findConfusion(ge[i-1],gs[j-1]);if(conf)result.confusions.push({...conf,from:ge[i-1],to:gs[j-1]});i--;j--;}else if(i>0&&dp[i][j]===dp[i-1][j]+1){i--;}else{j--;}}return result;}
+
+// ═══════════════════════════════════════════ TEXTE UI
+function onLevelChange(){currentLevel=document.getElementById('sel-level').value;currentTextIdx=0;buildTextTabs();loadText(0);}
+function buildTextTabs(){const tabs=TEXTES[currentLevel];document.getElementById('text-tabs').innerHTML=tabs.map((t,i)=>`<button class="text-tab${i===currentTextIdx?' active':''}" onclick="selectText(${i})">${t.id.split('-')[1]} – ${t.titre}</button>`).join('');}
+function selectText(idx){currentTextIdx=idx;buildTextTabs();loadText(idx);}
+function loadText(idx){currentTexte=TEXTES[currentLevel][idx];refWords=tokenize(currentTexte.texte);tapWordCount=null;renderTextDisplay();document.getElementById('text-meta').textContent=`${currentTexte.total} mots au total${currentTexte.auteur?' – '+currentTexte.auteur:''}`;}
+function renderTextDisplay(marks){
+  const box=document.getElementById('text-display');const ft=currentTexte.texte;let html='',lastEnd=0;
+  for(const t of refWords){
+    html+=escHtml(ft.slice(lastEnd,t.start)).replace(/\n/g,'<br>');
+    let cls='word';
+    if(marks){if(marks.sub&&marks.sub.has(t.idx))cls+=' err-sub';else if(marks.om&&marks.om.has(t.idx))cls+=' err-om';else if(tapWordCount!=null&&t.idx<tapWordCount)cls+=' lue';}
+    else if(tapWordCount!=null){if(t.idx<tapWordCount)cls+=' lue';else if(t.idx===tapWordCount)cls+=' courante';}
+    html+=`<span class="${cls}" id="w${t.idx}" onclick="tapWord(${t.idx})">${escHtml(t.orig)}</span>`;
+    lastEnd=t.end;
+  }
+  html+=escHtml(ft.slice(lastEnd)).replace(/\n/g,'<br>');
+  box.innerHTML=html;
+}
+function tapWord(idx){
+  // Actif seulement en phase relecture
+  if(document.getElementById('card-review').classList.contains('hidden'))return;
+  tapWordCount=idx+1;
+  document.getElementById('inp-correction').value=tapWordCount;
+  finalCount=tapWordCount;
+  renderTextDisplay();
+  updateReviewStats();
+}
+
+// ═══════════════════════════════════════════ SPEECH RECOGNITION (silencieux)
+function muteBip(){try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const g=audioCtx.createGain();g.gain.setValueAtTime(0,audioCtx.currentTime);g.connect(audioCtx.destination);setTimeout(()=>g.disconnect(),400);}catch(e){}}
+function initSR(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){document.getElementById('sr-badge').innerHTML='<span class="badge badge-no">Transcription auto : non dispo</span>';return;}srSupported=true;document.getElementById('sr-badge').innerHTML='<span class="badge badge-ok">✓ Transcription auto (Chrome/Edge)</span>';buildSR();}
+function buildSR(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new SR();recognition.lang='fr-FR';recognition.interimResults=true;recognition.continuous=true;recognition.maxAlternatives=1;
+  recognition.onresult=(e)=>{let newFinals='',interim='',total=0;for(let i=0;i<e.results.length;i++){if(e.results[i].isFinal){total++;if(total>srProcessedFinals)newFinals+=e.results[i][0].transcript+' ';}else interim=e.results[i][0].transcript;}srProcessedFinals=total;if(newFinals.trim()){newFinals=removeOverlap(transcript,newFinals);if(newFinals.trim())transcript+=newFinals;}interimTranscript=interim;};
+  recognition.onerror=(e)=>{};
+  recognition.onend=()=>{interimTranscript='';if(isRunning&&!srRestarting){srRestarting=true;muteBip();setTimeout(()=>{srRestarting=false;if(isRunning){srProcessedFinals=0;try{recognition.start();}catch(err){}}},600);}};
+}
+function cleanWordCount(){return transcript.trim()?transcript.trim().split(/\s+/).filter(Boolean).length:0;}
+
+// ═══════════════════════════════════════════ ENREGISTREMENT AUDIO
+async function startRecording(){
+  audioChunks=[];audioBlob=null;
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    let mime='';
+    for(const m of ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg']){if(MediaRecorder.isTypeSupported(m)){mime=m;break;}}
+    mediaRecorder=mime?new MediaRecorder(micStream,{mimeType:mime}):new MediaRecorder(micStream);
+    mediaRecorder.ondataavailable=(e)=>{if(e.data.size>0)audioChunks.push(e.data);};
+    mediaRecorder.onstop=()=>{
+      audioBlob=new Blob(audioChunks,{type:mediaRecorder.mimeType||'audio/webm'});
+      audioURL=URL.createObjectURL(audioBlob);
+      const el=document.getElementById('audio-el');el.src=audioURL;
+      if(micStream)micStream.getTracks().forEach(t=>t.stop());
+    };
+    mediaRecorder.start();
+    recSupported=true;
+    return true;
+  }catch(err){
+    recSupported=false;
+    document.getElementById('rec-badge').innerHTML='<span class="badge badge-no">⚠ Micro non autorisé — enregistrement audio impossible</span>';
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════ CHRONO
+const CIRC=2*Math.PI*65;
+function startCountdown(){
+  if(!currentTexte){alert("Sélectionner un texte d'abord !");return;}
+  let cd=3;const ov=document.getElementById('cd-overlay'),nm=document.getElementById('cd-num');
+  ov.classList.add('show');nm.textContent=cd;nm.style.animation='none';nm.offsetHeight;nm.style.animation='';
+  const ci=setInterval(()=>{cd--;if(cd<=0){clearInterval(ci);ov.classList.remove('show');startTest();}else{nm.textContent=cd;nm.style.animation='none';nm.offsetHeight;nm.style.animation='';}},900);
+}
+async function startTest(){
+  secsLeft=60;secsElapsed=0;isRunning=true;transcript='';interimTranscript='';
+  asrTimeline=[];tapWordCount=null;finalCount=0;srRestarting=false;srProcessedFinals=0;lastAnalysis=null;
+  // UI : masquer texte, montrer chrono seul
+  document.getElementById('card-text').classList.add('hidden');
+  document.getElementById('card-review').classList.add('hidden');
+  document.getElementById('card-analysis').classList.add('hidden');
+  document.getElementById('ctrl-idle').classList.add('hidden');
+  document.getElementById('ctrl-recording').classList.remove('hidden');
+  document.getElementById('rec-status').classList.remove('hidden');
+  document.getElementById('sel-level').disabled=true;
+  // Démarrer enregistrement audio + ASR silencieux
+  await startRecording();
+  if(srSupported&&recognition)try{recognition.start();}catch(e){}
+  const ring=document.getElementById('ring'),secEl=document.getElementById('ring-sec');
+  ring.classList.remove('done','warn');secEl.classList.remove('warn');
+  timerInt=setInterval(()=>{
+    secsLeft--;secsElapsed++;
+    secEl.textContent=secsLeft;
+    ring.style.strokeDashoffset=CIRC*(1-(60-secsLeft)/60);
+    if(secsLeft<=10){ring.classList.add('warn');secEl.classList.add('warn');}
+    asrTimeline[secsElapsed]=cleanWordCount(); // capture silencieuse
+    if(secsLeft<=0)endTest();
+  },1000);
+}
+function stopTest(){endTest();}
+function endTest(){
+  clearInterval(timerInt);isRunning=false;srRestarting=true;
+  const ring=document.getElementById('ring'),secEl=document.getElementById('ring-sec');
+  ring.classList.remove('warn');ring.classList.add('done');ring.style.strokeDashoffset=0;secEl.classList.remove('warn');secEl.textContent='0';
+  if(srSupported&&recognition)try{recognition.stop();}catch(e){}
+  if(mediaRecorder&&mediaRecorder.state!=='inactive')try{mediaRecorder.stop();}catch(e){}
+  document.getElementById('rec-status').classList.add('hidden');
+  document.getElementById('ctrl-recording').classList.add('hidden');
+  document.getElementById('ctrl-idle').classList.remove('hidden');
+  document.getElementById('btn-start').disabled=true;
+  document.getElementById('sel-level').disabled=false;
+  // Estimation initiale du nb de mots (ASR) → l'enseignant ajuste par tap
+  const asrCount=cleanWordCount();
+  finalCount=Math.min(asrCount,refWords.length);
+  tapWordCount=finalCount;
+  // Afficher texte pour le tap + panneau résultat
+  document.getElementById('card-text').classList.remove('hidden');
+  document.getElementById('text-section-title').style.display='block';
+  document.getElementById('tap-hint').classList.remove('hidden');
+  document.getElementById('inp-correction').value=finalCount;
+  renderTextDisplay();
+  document.getElementById('card-review').classList.remove('hidden');
+  // Cacher le player audio si pas d'enregistrement
+  document.getElementById('audio-panel').style.display=recSupported?'block':'none';
+  updateReviewStats();
+  document.getElementById('btn-analyze').disabled=false;
+  document.getElementById('card-review').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function onCorrectionInput(){const v=parseInt(document.getElementById('inp-correction').value)||0;tapWordCount=v;finalCount=v;renderTextDisplay();updateReviewStats();}
+
+// ═══════════════════════════════════════════ RÉSULTAT
+function getNormBand(wpm,level){const n=NORMS[level]||NORMS.CE1;if(wpm<n.low)return{label:'Faible',cls:'alert',icon:'⚠️'};if(wpm<n.fmax)return{label:'Fragile',cls:'alert',icon:'📌'};if(wpm<n.emax)return{label:'Attendu',cls:'good',icon:'✅'};return{label:'Avancé',cls:'good',icon:'🌟'};}
+function updateReviewStats(){
+  const elapsed=secsElapsed>0?secsElapsed:60;
+  const wpm=Math.round((finalCount/elapsed)*60);
+  document.getElementById('rev-words').textContent=finalCount;
+  document.getElementById('rev-wpm').textContent=wpm;
+  const band=getNormBand(wpm,currentLevel);
+  document.getElementById('rev-norm').innerHTML=`<div class="norm-band"><span>${band.icon}</span><span>Niveau <strong>${currentLevel}</strong> · <strong>${wpm}</strong> mots/min · Profil : <strong>${band.label}</strong> · Texte ${currentTexte.id}</span></div>`;
+}
+
+// ═══════════════════════════════════════════ ANALYSE (à la demande)
+function analyzeErrors(fc){
+  const empty={total:0,correct:0,substitutions:[],omissions:[],insertions:[],selfCorr:0,repetitions:0,confusionCounts:{},accuracy:100,subIdx:new Set(),omIdx:new Set()};
+  if(!currentTexte||!transcript.trim())return empty;
+  const REF=refWords.slice(0,Math.min(fc+8,refWords.length));
+  const HYP=transcript.trim().split(/\s+/).filter(Boolean).map(w=>({orig:w,nrm:norm(w)})).filter(w=>w.nrm.length>0);
+  const m=REF.length,n=HYP.length;if(m===0||n===0)return empty;
+  const GAP=-0.6;
+  const dp=Array.from({length:m+1},()=>new Float32Array(n+1));
+  const bt=Array.from({length:m+1},()=>new Int8Array(n+1));
+  for(let i=1;i<=m;i++){dp[i][0]=i*GAP;bt[i][0]=1;}
+  for(let j=1;j<=n;j++){dp[0][j]=j*GAP;bt[0][j]=2;}
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){const s=simScore(REF[i-1].nrm,HYP[j-1].nrm)*2-1;const diag=dp[i-1][j-1]+s,up=dp[i-1][j]+GAP,left=dp[i][j-1]+GAP;if(diag>=up&&diag>=left){dp[i][j]=diag;bt[i][j]=0;}else if(up>=left){dp[i][j]=up;bt[i][j]=1;}else{dp[i][j]=left;bt[i][j]=2;}}
+  const ops=[];let i=m,j=n;while(i>0||j>0){if(i>0&&j>0&&bt[i][j]===0){ops.push({op:'align',ref:REF[i-1],hyp:HYP[j-1],ri:i-1});i--;j--;}else if(i>0&&bt[i][j]===1){ops.push({op:'omission',ref:REF[i-1],ri:i-1});i--;}else{ops.push({op:'insertion',hyp:HYP[j-1]});j--;}}
+  ops.reverse();
+  const res={total:0,correct:0,substitutions:[],omissions:[],insertions:[],selfCorr:0,repetitions:0,confusionCounts:{},subIdx:new Set(),omIdx:new Set()};
+  for(let k=0;k<ops.length;k++){const o=ops[k];
+    if(o.op==='align'){if(o.ri>=fc)continue;res.total++;const sc=simScore(o.ref.nrm,o.hyp.nrm);
+      if(sc>=0.82)res.correct++;
+      else{const next=ops[k+1];if(next&&next.op==='insertion'&&simScore(o.ref.nrm,next.hyp.nrm)>=0.82){res.selfCorr++;res.correct++;}
+        else{const cls=classifySubstitution(o.ref.orig,o.hyp.orig);res.substitutions.push({expected:o.ref.orig,said:o.hyp.orig,confusions:cls.confusions});res.subIdx.add(o.ri);cls.confusions.forEach(c=>{res.confusionCounts[c.type]=(res.confusionCounts[c.type]||0)+1;});}}}
+    else if(o.op==='omission'){if(o.ri>=fc)continue;res.total++;res.omissions.push({word:o.ref.orig});res.omIdx.add(o.ri);}
+    else if(o.op==='insertion'){const prev=ops[k-1];if(prev&&prev.op==='align'&&simScore(prev.hyp.nrm,o.hyp.nrm)>=0.82)res.repetitions++;else res.insertions.push({word:o.hyp.orig});}
+  }
+  res.accuracy=res.total>0?Math.round((res.correct/res.total)*100):100;
+  return res;
+}
+function computeSpeedProfile(){
+  const t20=asrTimeline[20]||0,t40=asrTimeline[40]||0,tEnd=asrTimeline[secsElapsed]||cleanWordCount();
+  const factor=tEnd>0?finalCount/tEnd:1;
+  const w20=Math.round(t20*factor),w40=Math.round(t40*factor);
+  const r1=Math.round((w20/20)*60);
+  const r2=Math.round(((w40-w20)/Math.max(1,Math.min(20,secsElapsed-20)))*60);
+  const r3=secsElapsed>40?Math.round(((finalCount-w40)/Math.max(1,secsElapsed-40))*60):0;
+  return[Math.max(0,r1),Math.max(0,r2),Math.max(0,r3)];
+}
+function getTrend(rates){const[r1,r2,r3]=rates;if(!r1||!r3)return{icon:'📊',label:'Données insuffisantes',desc:'Test trop court ou transcription incomplète pour analyser la tendance.'};const diff=r3-r1;if(diff>15)return{icon:'📈',label:'Accélération',desc:'Le débit augmente en cours de lecture — bonne endurance ou familiarisation avec le texte.'};if(diff<-15)return{icon:'📉',label:'Décélération',desc:'Le débit diminue — possible fatigue, hésitations croissantes ou difficulté du texte en fin de page.'};return{icon:'➡️',label:'Débit stable',desc:'Vitesse de lecture régulière tout au long du test.'};}
+
+function runAnalysis(){
+  const fc=parseInt(document.getElementById('inp-correction').value)||finalCount;
+  finalCount=fc;
+  const errors=analyzeErrors(fc);
+  lastAnalysis=errors;
+  const rates=computeSpeedProfile();
+  const segColors=['#2a7d4f','#2a4d7d','#d4522a'];
+  document.getElementById('speed-grid').innerHTML=rates.map((r,i)=>`<div class="seg-box"><div class="sv" style="color:${segColors[i]}">${r}</div><div class="sl">${['0–20s','20–40s','40–60s'][i]}<br>mots/min</div></div>`).join('');
+  const trend=getTrend(rates);
+  document.getElementById('trend-zone').innerHTML=`<div class="trend-box"><span class="trend-icon">${trend.icon}</span><span><strong>${trend.label}</strong> — ${trend.desc}</span></div>`;
+  showErrors(errors);
+  // Surligner erreurs dans le texte
+  renderTextDisplay({sub:errors.subIdx,om:errors.omIdx});
+  document.getElementById('card-analysis').classList.remove('hidden');
+  document.getElementById('card-analysis').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function showErrors(errors){
+  const zone=document.getElementById('error-section');let html='<div class="error-title">Erreurs de lecture (estimées)</div>';
+  const subN=errors.substitutions.length,omN=errors.omissions.length,inN=errors.insertions.length;
+  html+='<div class="error-chips" style="margin-bottom:8px">';
+  html+=`<span class="chip ${errors.accuracy>=95?'chip-ok':errors.accuracy>=85?'chip-om':'chip-bd'}">Précision ${errors.accuracy}%</span>`;
+  if(subN>0)html+=`<span class="chip chip-bd">${subN} substitution${subN>1?'s':''}</span>`;
+  if(omN>0)html+=`<span class="chip chip-om">${omN} omission${omN>1?'s':''}</span>`;
+  if(inN>0)html+=`<span class="chip chip-dg">${inN} ajout${inN>1?'s':''}</span>`;
+  if(errors.selfCorr>0)html+=`<span class="chip chip-ok">↩ ${errors.selfCorr} auto-correction${errors.selfCorr>1?'s':''}</span>`;
+  if(errors.repetitions>0)html+=`<span class="chip chip-dg">⟲ ${errors.repetitions} répétition${errors.repetitions>1?'s':''}</span>`;
+  html+='</div>';
+  if(subN===0&&omN===0)html+='<div class="error-chips"><span class="chip chip-ok">✓ Lecture très précise</span></div>';
+  const confs=Object.entries(errors.confusionCounts).sort((a,b)=>b[1]-a[1]);
+  if(confs.length){html+='<div class="error-title" style="margin-top:10px">Types de confusion (graphème)</div><div class="error-chips">';confs.forEach(([type,n])=>{const cls=type.includes('Inversion')||type.includes('m/n')?'chip-bd':type.includes('Nasale')?'chip-nas':type.includes('Sonorité')?'chip-son':type.includes('Voyelle')?'chip-voy':'chip-dg';html+=`<span class="chip ${cls}">${type} ×${n}</span>`;});html+='</div>';}
+  if(subN>0){html+='<div class="error-title" style="margin-top:10px">Mots substitués</div><div class="sub-list">';errors.substitutions.slice(0,10).forEach(s=>{const tag=s.confusions.length?` <small style="color:var(--accent)">(${s.confusions.map(c=>c.from+'→'+c.to).join(', ')})</small>`:'';html+=`<div class="sub-item"><span class="sub-exp">${escHtml(s.expected)}</span> <span style="color:var(--ink2)">→</span> <span class="sub-said">${escHtml(s.said)}</span>${tag}</div>`;});if(subN>10)html+=`<div class="sub-item" style="color:var(--ink2);font-style:italic">… +${subN-10} autres</div>`;html+='</div>';}
+  if(omN>0){html+='<div class="error-title" style="margin-top:10px">Mots omis / non lus</div><div class="error-chips">';errors.omissions.slice(0,15).forEach(o=>html+=`<span class="chip chip-om">${escHtml(o.word)}</span>`);if(omN>15)html+=`<span class="chip chip-om">…+${omN-15}</span>`;html+='</div>';}
+  html+='<p style="font-size:.68rem;color:var(--ink2);margin-top:8px;font-style:italic">⚠ Analyse automatique indicative — la reconnaissance vocale confond parfois erreur de lecture et erreur de transcription. Réécoutez l\'enregistrement pour confirmer.</p>';
+  zone.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════ AUDIO ACTIONS
+function downloadAudio(){
+  if(!audioBlob){alert('Aucun enregistrement disponible.');return;}
+  const name=(document.getElementById('inp-name').value.trim()||'eleve').replace(/\s+/g,'_');
+  const ext=(audioBlob.type.includes('mp4')?'m4a':audioBlob.type.includes('ogg')?'ogg':'webm');
+  const a=document.createElement('a');a.href=audioURL;a.download=`fluence_${name}_${currentTexte.id}.${ext}`;document.body.appendChild(a);a.click();a.remove();
+}
+
+// ═══════════════════════════════════════════ SAUVEGARDE SESSION
+function saveSession(){
+  const fc=parseInt(document.getElementById('inp-correction').value)||finalCount;
+  const elapsed=secsElapsed>0?secsElapsed:60;
+  const wpm=Math.round((fc/elapsed)*60);
+  const entry={date:new Date().toLocaleDateString('fr-FR'),time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),student:document.getElementById('inp-name').value.trim()||'Élève',level:currentLevel,textId:currentTexte.id,wpm,words:fc,elapsed,accuracy:lastAnalysis?lastAnalysis.accuracy:null};
+  history.push(entry);localStorage.setItem('fluence_hist2',JSON.stringify(history));
+  renderHistory();
+  document.getElementById('btn-save').textContent='✓ Enregistré';
+  document.getElementById('btn-save').disabled=true;
+  document.getElementById('hist-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ═══════════════════════════════════════════ HISTORIQUE
+function renderHistory(){
+  const body=document.getElementById('hist-body'),cz=document.getElementById('chart-zone');
+  if(!history.length){body.innerHTML='<div class="no-hist">Aucune session enregistrée</div>';cz.classList.add('hidden');return;}
+  const rows=history.slice().reverse().map((h,ri)=>{const realIdx=history.length-1-ri;const prev=realIdx>0?history.slice(0,realIdx).filter(p=>p.student===h.student&&p.level===h.level).slice(-1)[0]:null;let acc='<span class="acc acc-eq">–</span>';if(prev){const d=h.wpm-prev.wpm;acc=`<span class="acc ${d>=0?'acc-up':'acc-dn'}">${d>=0?'+':''}${d}</span>`;}const band=getNormBand(h.wpm,h.level);return`<tr><td>${h.date} ${h.time}</td><td>${h.student}</td><td>${h.level}<br><small style="color:var(--ink2)">${h.textId||''}</small></td><td><strong>${h.wpm}</strong></td><td>${h.accuracy!=null?h.accuracy+'%':'–'}</td><td>${acc}</td><td>${band.icon} ${band.label}</td></tr>`;}).join('');
+  body.innerHTML=`<table><thead><tr><th>Date</th><th>Élève</th><th>Niv.</th><th>M/min</th><th>Préc.</th><th>Évol.</th><th>Profil</th></tr></thead><tbody>${rows}</tbody></table>`;
+  if(history.length>=2){cz.classList.remove('hidden');drawChart();}
+}
+function drawChart(){const cv=document.getElementById('prog-chart'),ctx=cv.getContext('2d');cv.width=cv.offsetWidth*2;cv.height=cv.offsetHeight*2;ctx.scale(2,2);const W=cv.offsetWidth/2,H=cv.offsetHeight/2;const vals=history.slice(-10).map(h=>h.wpm);const mn=Math.min(...vals)-5,mx=Math.max(...vals)+5;ctx.clearRect(0,0,W,H);ctx.strokeStyle='#d6cfc4';ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();ctx.strokeStyle='#d4522a';ctx.lineWidth=1.5;ctx.lineJoin='round';ctx.beginPath();vals.forEach((v,i)=>{const x=(i/(vals.length-1||1))*(W-20)+10,y=H-10-((v-mn)/(mx-mn||1))*(H-20);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();vals.forEach((v,i)=>{const x=(i/(vals.length-1||1))*(W-20)+10,y=H-10-((v-mn)/(mx-mn||1))*(H-20);ctx.fillStyle='#d4522a';ctx.beginPath();ctx.arc(x,y,3,0,2*Math.PI);ctx.fill();ctx.fillStyle='#4a3f35';ctx.font='9px DM Mono';ctx.textAlign='center';ctx.fillText(v,x,y-6);});}
+function clearHist(){if(!confirm("Effacer tout l'historique ?"))return;history=[];localStorage.removeItem('fluence_hist2');renderHistory();}
+
+// ═══════════════════════════════════════════ RESET
+function resetAll(){
+  clearInterval(timerInt);isRunning=false;
+  secsLeft=60;secsElapsed=0;tapWordCount=null;finalCount=0;transcript='';interimTranscript='';asrTimeline=[];lastAnalysis=null;
+  if(audioURL){URL.revokeObjectURL(audioURL);audioURL=null;}audioBlob=null;audioChunks=[];
+  document.getElementById('ring-sec').textContent='60';document.getElementById('ring-sec').classList.remove('warn');
+  const ring=document.getElementById('ring');ring.style.strokeDashoffset=CIRC;ring.classList.remove('warn','done');
+  document.getElementById('card-review').classList.add('hidden');
+  document.getElementById('card-analysis').classList.add('hidden');
+  document.getElementById('card-text').classList.remove('hidden');
+  document.getElementById('text-section-title').style.display='none';
+  document.getElementById('tap-hint').classList.add('hidden');
+  document.getElementById('ctrl-idle').classList.remove('hidden');
+  document.getElementById('ctrl-recording').classList.add('hidden');
+  document.getElementById('rec-status').classList.add('hidden');
+  document.getElementById('btn-start').disabled=false;
+  document.getElementById('btn-save').textContent='💾 Enregistrer la session';
+  document.getElementById('btn-save').disabled=false;
+  document.getElementById('btn-analyze').disabled=false;
+  document.getElementById('rec-badge').innerHTML='';
+  if(currentTexte)renderTextDisplay();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════ INIT
+buildTextTabs();loadText(0);initSR();renderHistory();
+</script>
+</body>
+</html>
